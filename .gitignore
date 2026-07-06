@@ -1,0 +1,110 @@
+# Environment and API Keys
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+ENV/
+env/
+.venv
+
+# IDE and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.sublime-project
+.sublime-workspace
+*.code-workspace
+.project
+.pydevproject
+.settings/
+
+# OS-specific
+.DS_Store
+Thumbs.db
+.Thumbs.db
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+desktop.ini
+
+# Audio files (generated during testing)
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.m4a
+*.aiff
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+
+# Cache
+.cache/
+*.cache
+__pycache__/
+
+# Project-specific
+# Whisper model cache
+whisper_models/
+models/
+
+# Generated output
+output/
+results/
+temp/
+tmp/
+
+# Database files (if used in future)
+*.db
+*.sqlite
+*.sqlite3
+
+# System
+.DS_Store
+Thumbs.db
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# Node modules (if frontend added)
+node_modules/

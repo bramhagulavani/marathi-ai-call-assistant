@@ -1,0 +1,13 @@
+# Phase 0 — Core AI Pipeline Dependencies
+
+# Speech-to-Text: Whisper (runs locally, free, no API key needed)
+openai-whisper
+
+# LLM: Google Gemini API (free tier, needs GEMINI_API_KEY)
+google-generativeai
+
+# Text-to-Speech: gTTS (Google Translate TTS, free, no API key needed)
+gTTS
+
+# Audio utilities
+ffmpeg-python
