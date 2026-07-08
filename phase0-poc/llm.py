@@ -1,12 +1,12 @@
 # llm.py — Language Model using Google Gemini API (free tier)
-# Takes Marathi caller text, returns a natural Marathi reply
+# Updated to use new google-genai package (google.generativeai is deprecated)
 
-import google.generativeai as genai
 import os
+from google import genai
+from google.genai import types
 
 # ---------------------------------------------------------------------------
-# SYSTEM PROMPT — this is the "personality" of your AI assistant
-# This tells Gemini exactly how to behave as a Marathi call assistant
+# SYSTEM PROMPT — personality of your Marathi AI call assistant
 # ---------------------------------------------------------------------------
 SYSTEM_PROMPT = """
 तुम्ही एक बुद्धिमान आणि विनम्र मराठी फोन सहाय्यक आहात.
@@ -28,44 +28,43 @@ def get_marathi_reply(caller_text: str, conversation_history: list = []) -> str:
     """
     Takes what the caller said (in Marathi text form).
     Returns the AI assistant's natural Marathi reply as a string.
-
-    conversation_history: list of previous messages in this call
-                          (so the AI remembers context across turns)
+    conversation_history: list of previous messages for context across turns.
     """
 
-    # Get Gemini API key from environment variable (never hardcode API keys!)
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
-        raise ValueError("GEMINI_API_KEY environment variable not set. Please set it first.")
+        raise ValueError("GEMINI_API_KEY environment variable not set.")
 
-    genai.configure(api_key=api_key)
+    # Initialize new google-genai client
+    client = genai.Client(api_key=api_key)
 
-    # Use Gemini 1.5 Flash — fast, free tier, good multilingual support
-    model = genai.GenerativeModel(
-        model_name="gemini-1.5-flash",
-        system_instruction=SYSTEM_PROMPT
-    )
-
-    # Build conversation history for context across multiple turns in a call
+    # Build conversation history for context
     history = []
     for msg in conversation_history:
-        history.append({
-            "role": msg["role"],
-            "parts": [msg["text"]]
-        })
+        role = "user" if msg["role"] == "user" else "model"
+        history.append(types.Content(role=role, parts=[types.Part(text=msg["text"])]))
 
-    # Start or continue conversation
-    chat = model.start_chat(history=history)
+    # Add current caller message
+    history.append(types.Content(role="user", parts=[types.Part(text=caller_text)]))
 
     print(f"[LLM] Caller said: {caller_text}")
-    response = chat.send_message(caller_text)
+
+    response = client.models.generate_content(
+        model="gemini-1.5-flash",
+        contents=history,
+        config=types.GenerateContentConfig(
+            system_instruction=SYSTEM_PROMPT,
+            max_output_tokens=300,
+            temperature=0.7,
+        )
+    )
 
     reply = response.text.strip()
     print(f"[LLM] AI Reply: {reply}")
     return reply
 
 
-# Quick test — run this file directly to test LLM alone
+# Quick test
 if __name__ == "__main__":
     test_input = "नमस्कार, मी रवी बोलतोय. उद्याच्या मीटिंगबद्दल सांगायचं होतं."
     reply = get_marathi_reply(test_input)
