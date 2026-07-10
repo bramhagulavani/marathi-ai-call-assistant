@@ -1,9 +1,8 @@
-# llm.py — Language Model using Google Gemini API (free tier)
-# Updated to use new google-genai package (google.generativeai is deprecated)
+# llm.py — Language Model using Groq API (free tier, no region restrictions)
+# Uses Llama 3 model via Groq for fast, free Marathi conversation
 
 import os
-from google import genai
-from google.genai import types
+from groq import Groq
 
 # ---------------------------------------------------------------------------
 # SYSTEM PROMPT — personality of your Marathi AI call assistant
@@ -26,45 +25,43 @@ SYSTEM_PROMPT = """
 
 def get_marathi_reply(caller_text: str, conversation_history: list = []) -> str:
     """
-    Takes what the caller said (in Marathi text form).
+    Takes what the caller said (in Marathi or English text).
     Returns the AI assistant's natural Marathi reply as a string.
     conversation_history: list of previous messages for context across turns.
     """
 
-    api_key = os.getenv("GEMINI_API_KEY")
+    api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
-        raise ValueError("GEMINI_API_KEY environment variable not set.")
+        raise ValueError("GROQ_API_KEY environment variable not set.")
 
-    # Initialize new google-genai client
-    client = genai.Client(api_key=api_key)
+    client = Groq(api_key=api_key)
 
-    # Build conversation history for context
-    history = []
+    # Build full message list: system prompt + history + current message
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+
     for msg in conversation_history:
-        role = "user" if msg["role"] == "user" else "model"
-        history.append(types.Content(role=role, parts=[types.Part(text=msg["text"])]))
+        messages.append({
+            "role": msg["role"],
+            "content": msg["text"]
+        })
 
-    # Add current caller message
-    history.append(types.Content(role="user", parts=[types.Part(text=caller_text)]))
+    messages.append({"role": "user", "content": caller_text})
 
     print(f"[LLM] Caller said: {caller_text}")
 
-    response = client.models.generate_content(
-        model="gemini-1.5-flash",
-        contents=history,
-        config=types.GenerateContentConfig(
-            system_instruction=SYSTEM_PROMPT,
-            max_output_tokens=300,
-            temperature=0.7,
-        )
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",  # Best free Groq model for Marathi
+        messages=messages,
+        max_tokens=300,
+        temperature=0.7,
     )
 
-    reply = response.text.strip()
+    reply = response.choices[0].message.content.strip()
     print(f"[LLM] AI Reply: {reply}")
     return reply
 
 
-# Quick test
+# Quick test — run this file directly to test LLM alone
 if __name__ == "__main__":
     test_input = "नमस्कार, मी रवी बोलतोय. उद्याच्या मीटिंगबद्दल सांगायचं होतं."
     reply = get_marathi_reply(test_input)
