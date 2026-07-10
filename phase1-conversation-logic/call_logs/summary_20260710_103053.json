@@ -1,0 +1,23 @@
+{
+  "call_id": "CALL_20260710_103053",
+  "timestamp": "2026-07-10 10:30:53",
+  "caller_number": "Unknown",
+  "caller_name": "Bramha",
+  "call_type": "business",
+  "purpose": "बैठक आणि चाचणी या विषयावर माझ्या वापरकर्त्याशी संपर्क साधण्यासाठी फोन केला आहे",
+  "urgency": "high",
+  "key_details": {
+    "time": "null",
+    "location": "null",
+    "date": "null",
+    "extra": "मीटिंग आणि टेस्टिंग भाग मालकाने स्वतः रोखले आहे"
+  },
+  "action_needed": "कॉलरशी लवकरात लवकर संपर्क साधणे",
+  "transcript": [
+    "Caller: Hello I am Bramha calling regarding the work pending",
+    "AI Assistant: नमस्कार ब्रह्मा, तुम्ही कोणत्या कामाबद्दल फोन केला आहे? आमच्या वापरकर्त्यांना सध्या बोलवता येत नाहीये, तुमचा निरोप द्यायला हावं?",
+    "Caller: It is regarding the meeting and testing part remained by the owner itself so call back immediately",
+    "AI Assistant: ब्रह्मा, तुमचा निरोप नोट केला आहे. तुम्ही बैठक आणि चाचणी या विषयावर माझ्या वापरकर्त्याशी संपर्क साधण्यासाठी फोन केला आहे. मी तुमचा निरोप त्यांना देईन आणि ते तुमच्याशी लवकरात लवकर संपर्क साधतील. धन्यवाद!"
+  ],
+  "total_turns": 2
+}
