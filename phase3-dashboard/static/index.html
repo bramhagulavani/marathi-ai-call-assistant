@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>मराठी AI कॉल सहाय्यक</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-left">
+      <span class="logo-icon">📞</span>
+      <div>
+        <h1>मराठी AI कॉल सहाय्यक</h1>
+        <p class="tagline">Marathi AI Call Assistant — Call Log Dashboard</p>
+      </div>
+    </div>
+    <button class="refresh-btn" onclick="loadDashboard()">↻ Refresh</button>
+  </header>
+
+  <!-- STATS BAR -->
+  <section class="stats-bar" id="statsBar">
+    <div class="stat-card" id="statTotal">
+      <span class="stat-number">—</span>
+      <span class="stat-label">Total Calls</span>
+    </div>
+    <div class="stat-card urgent" id="statUrgent">
+      <span class="stat-number">—</span>
+      <span class="stat-label">🔴 Urgent</span>
+    </div>
+    <div class="stat-card" id="statBusiness">
+      <span class="stat-number">—</span>
+      <span class="stat-label">💼 Business</span>
+    </div>
+    <div class="stat-card" id="statPersonal">
+      <span class="stat-number">—</span>
+      <span class="stat-label">👤 Personal</span>
+    </div>
+  </section>
+
+  <!-- MAIN CONTENT -->
+  <main>
+
+    <!-- CALL LIST -->
+    <section class="call-list-section">
+      <h2 class="section-title">Recent Calls</h2>
+      <div id="callList" class="call-list">
+        <div class="loading">Loading calls...</div>
+      </div>
+    </section>
+
+    <!-- CALL DETAIL PANEL -->
+    <section class="detail-panel" id="detailPanel">
+      <div class="detail-empty">
+        <span>📋</span>
+        <p>Select a call to view details</p>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
