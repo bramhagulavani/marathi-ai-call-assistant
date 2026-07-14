@@ -10,7 +10,17 @@ const CALL_TYPE_LABELS = {
 };
 
 let allCalls = [];
-let activeCallId = null;
+
+// -------------------------------------------------------------------------
+// SAFETY: call content (caller name, purpose, transcript) comes from an LLM
+// reading untrusted caller speech, so it's escaped before going into
+// innerHTML rather than trusted as plain markup.
+// -------------------------------------------------------------------------
+function escapeHtml(value) {
+  const div = document.createElement("div");
+  div.textContent = value ?? "";
+  return div.innerHTML;
+}
 
 // -------------------------------------------------------------------------
 // LOAD DASHBOARD
@@ -25,10 +35,10 @@ async function loadStats() {
     const res = await fetch("/api/stats");
     const data = await res.json();
 
-    document.querySelector("#statTotal .stat-number").textContent  = data.total_calls  ?? 0;
-    document.querySelector("#statUrgent .stat-number").textContent = data.urgent_calls ?? 0;
-    document.querySelector("#statBusiness .stat-number").textContent = data.by_type?.business   ?? 0;
-    document.querySelector("#statPersonal .stat-number").textContent = data.by_type?.personal   ?? 0;
+    document.querySelector("#statTotal .stat-number").textContent    = data.total_calls  ?? 0;
+    document.querySelector("#statUrgent .stat-number").textContent   = data.urgent_calls ?? 0;
+    document.querySelector("#statBusiness .stat-number").textContent = data.by_type?.business ?? 0;
+    document.querySelector("#statPersonal .stat-number").textContent = data.by_type?.personal ?? 0;
 
   } catch (err) {
     console.error("Failed to load stats:", err);
@@ -45,22 +55,17 @@ async function loadCalls() {
     allCalls = data.calls ?? [];
 
     if (allCalls.length === 0) {
-      listEl.innerHTML = `<div class="empty-state">No calls yet.<br>Run Phase 1 to generate call logs.</div>`;
+      listEl.innerHTML = `<div class="empty-state">No calls yet.<br>Run "python run.py chat" to generate a call log.</div>`;
       return;
     }
 
     listEl.innerHTML = "";
-    allCalls.forEach(call => {
-      listEl.appendChild(buildCallCard(call));
-    });
+    allCalls.forEach(call => listEl.appendChild(buildCallCard(call)));
 
-    // Auto-select first call
-    if (allCalls.length > 0) {
-      showCallDetail(allCalls[0]);
-    }
+    showCallDetail(allCalls[0]);
 
   } catch (err) {
-    listEl.innerHTML = `<div class="empty-state">Could not connect to server.<br>Make sure app.py is running.</div>`;
+    listEl.innerHTML = `<div class="empty-state">Could not connect to server.<br>Make sure the dashboard server is running.</div>`;
     console.error(err);
   }
 }
@@ -75,18 +80,15 @@ function buildCallCard(call) {
 
   const urgency = call.urgency ?? "low";
   const typeLabel = CALL_TYPE_LABELS[call.call_type] ?? "❓ Unknown";
-  const callerName = call.caller_name ?? "Unknown";
-  const purpose = call.purpose ?? "N/A";
-  const time = call.timestamp ?? "";
 
   card.innerHTML = `
     <div class="call-card-top">
-      <span class="caller-name">${callerName}</span>
+      <span class="caller-name">${escapeHtml(call.caller_name ?? "Unknown")}</span>
       <span class="urgency-badge ${urgency}">${urgencyLabel(urgency)}</span>
     </div>
     <div class="call-type-label">${typeLabel}</div>
-    <div class="call-purpose">${purpose}</div>
-    <div class="call-time">${time}</div>
+    <div class="call-purpose">${escapeHtml(call.purpose ?? "N/A")}</div>
+    <div class="call-time">${escapeHtml(call.timestamp ?? "")}</div>
   `;
 
   card.addEventListener("click", () => {
@@ -102,28 +104,25 @@ function buildCallCard(call) {
 // SHOW CALL DETAIL (right panel)
 // -------------------------------------------------------------------------
 function showCallDetail(call) {
-  activeCallId = call.call_id;
   const panel = document.getElementById("detailPanel");
   const urgency = call.urgency ?? "low";
   const typeLabel = CALL_TYPE_LABELS[call.call_type] ?? "❓ Unknown";
   const details = call.key_details ?? {};
   const transcript = call.transcript ?? [];
 
-  // Emergency alert
-  const alertHTML = urgency === "high" ? `
-    <div class="alert-box">🚨 URGENT — This call needs immediate attention!</div>
-  ` : "";
+  const alertHTML = urgency === "high"
+    ? `<div class="alert-box">🚨 URGENT — This call needs immediate attention!</div>`
+    : "";
 
-  // Key details grid
   const detailFields = [
     { label: "Call Type",    value: typeLabel },
     { label: "Urgency",      value: urgencyLabel(urgency) },
-    { label: "Caller Name",  value: call.caller_name ?? "Unknown" },
-    { label: "Phone Number", value: call.caller_number ?? "Unknown" },
-    { label: "Time",         value: details.time     ?? "—" },
-    { label: "Date",         value: details.date     ?? "—" },
-    { label: "Location",     value: details.location ?? "—" },
-    { label: "Extra Info",   value: details.extra    ?? "—" },
+    { label: "Caller Name",  value: escapeHtml(call.caller_name ?? "Unknown") },
+    { label: "Phone Number", value: escapeHtml(call.caller_number ?? "Unknown") },
+    { label: "Time",         value: escapeHtml(details.time ?? "—") },
+    { label: "Date",         value: escapeHtml(details.date ?? "—") },
+    { label: "Location",     value: escapeHtml(details.location ?? "—") },
+    { label: "Extra Info",   value: escapeHtml(details.extra ?? "—") },
   ];
 
   const detailGridHTML = detailFields.map(f => `
@@ -133,7 +132,6 @@ function showCallDetail(call) {
     </div>
   `).join("");
 
-  // Transcript
   const transcriptHTML = transcript.length === 0
     ? "<div style='color:var(--muted);font-size:13px;'>No transcript available.</div>"
     : transcript.map(line => {
@@ -144,7 +142,7 @@ function showCallDetail(call) {
         return `
           <div class="transcript-line">
             <div class="speaker ${speakerClass}">${speakerLabel}</div>
-            <div>${text}</div>
+            <div>${escapeHtml(text)}</div>
           </div>
         `;
       }).join("");
@@ -152,8 +150,8 @@ function showCallDetail(call) {
   panel.innerHTML = `
     <div class="detail-header">
       <div>
-        <div class="detail-caller">${call.caller_name ?? "Unknown Caller"}</div>
-        <div class="detail-call-id">${call.call_id}</div>
+        <div class="detail-caller">${escapeHtml(call.caller_name ?? "Unknown Caller")}</div>
+        <div class="detail-call-id">${escapeHtml(call.call_id ?? "")}</div>
       </div>
       <span class="urgency-badge ${urgency}">${urgencyLabel(urgency)}</span>
     </div>
@@ -162,7 +160,7 @@ function showCallDetail(call) {
 
     <div class="action-box">
       <div class="action-box-label">✅ Action Needed</div>
-      <div class="action-box-value">${call.action_needed ?? "N/A"}</div>
+      <div class="action-box-value">${escapeHtml(call.action_needed ?? "N/A")}</div>
     </div>
 
     <div class="detail-grid">${detailGridHTML}</div>
