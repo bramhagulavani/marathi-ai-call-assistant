@@ -1,21 +1,21 @@
-# conversation.py — Smart Conversation Manager
-# Manages the flow of conversation based on call type
-# Asks the RIGHT follow-up questions depending on what kind of call it is
+# conversation.py — Smart Conversation Manager.
+#
+# This replaces the old duplicated setup where phase0/llm.py defined one
+# generic Marathi persona and phase1/conversation.py defined a second,
+# slightly different one used for call-type-specific replies. There is now
+# a single BASE_PROMPT and a single set of per-call-type prompts, and a
+# single "unknown" type doubles as the generic/first-turn persona — so
+# there's exactly one place that defines how the assistant talks.
 
-import os
-from groq import Groq
-
-# ---------------------------------------------------------------------------
-# SMART SYSTEM PROMPTS — one for each call type
-# Each prompt tells the AI exactly what info to collect for that call type
-# ---------------------------------------------------------------------------
+from . import config
+from .groq_client import get_client
 
 BASE_PROMPT = """
 तुम्ही एक बुद्धिमान आणि विनम्र मराठी फोन सहाय्यक आहात.
 तुम्ही वापरकर्त्याच्या वतीने फोन कॉलला उत्तर देत आहात.
-वापरकर्ता सध्या उपलब्ध नाही.
-उत्तरे नेहमी संक्षिप्त, स्पष्ट आणि नैसर्गिक मराठीत द्या.
-फक्त मराठीत बोला.
+वापरकर्ता सध्या उपलब्ध नाही — ते व्यस्त, व्याख्यानात, झोपलेले किंवा गाडी चालवत असू शकतात.
+उत्तरे नेहमी संक्षिप्त, स्पष्ट आणि नैसर्गिक मराठीत द्या — खूप मोठी उत्तरे देऊ नका.
+फक्त मराठीत बोला. इंग्रजी किंवा हिंदी वापरू नका.
 """
 
 CALL_TYPE_PROMPTS = {
@@ -63,60 +63,42 @@ CALL_TYPE_PROMPTS = {
 1. कॉलरचे नाव विचारा
 2. कशाबद्दल फोन केला ते विचारा
 3. निरोप गोळा करा
-"""
+""",
 }
 
 
-def get_smart_reply(
-    caller_text: str,
-    conversation_history: list,
-    call_type: str = "unknown"
-) -> str:
+def get_smart_reply(caller_text: str, conversation_history: list, call_type: str = "unknown") -> str:
     """
-    Generates a smart Marathi reply based on the detected call type.
-    Uses the appropriate system prompt for the call category.
+    Generates a Marathi reply using the system prompt for the detected call type.
 
     caller_text: what the caller just said
-    conversation_history: full history of the conversation so far
-    call_type: detected call category (from classifier or 'unknown' initially)
+    conversation_history: prior turns, as [{"role": "user"/"assistant", "text": ...}, ...]
+    call_type: category from classifier.py, or "unknown" before it's been detected
     """
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key:
-        raise ValueError("GROQ_API_KEY environment variable not set.")
-
-    client = Groq(api_key=api_key)
-
-    # Pick the right system prompt for this call type
+    client = get_client()
     system_prompt = CALL_TYPE_PROMPTS.get(call_type, CALL_TYPE_PROMPTS["unknown"])
 
-    # Build messages with full history
     messages = [{"role": "system", "content": system_prompt}]
-
     for msg in conversation_history:
         role = "user" if msg["role"] == "user" else "assistant"
         messages.append({"role": role, "content": msg["text"]})
-
     messages.append({"role": "user", "content": caller_text})
 
-    print(f"[CONVERSATION] Call type: {call_type}")
-    print(f"[CONVERSATION] Caller said: {caller_text}")
+    print(f"[CONVERSATION] Call type: {call_type} | Caller said: {caller_text}")
 
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model=config.GROQ_MODEL,
         messages=messages,
         max_tokens=300,
         temperature=0.7,
     )
 
     reply = response.choices[0].message.content.strip()
-    print(f"[CONVERSATION] AI Reply: {reply}")
+    print(f"[CONVERSATION] AI reply: {reply}")
     return reply
 
 
-# Quick test
 if __name__ == "__main__":
-    history = []
     test_input = "नमस्कार, मी अमित. उद्या मीटिंग आहे."
-    reply = get_smart_reply(test_input, history, call_type="meeting_request")
-    print(f"\nCaller: {test_input}")
-    print(f"AI: {reply}")
+    reply = get_smart_reply(test_input, [], call_type="meeting_request")
+    print(f"\nCaller: {test_input}\nAI: {reply}")

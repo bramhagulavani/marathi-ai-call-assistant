@@ -1,13 +1,20 @@
-# Phase 0 — Core AI Pipeline Dependencies
-
 # Speech-to-Text: Whisper (runs locally, free, no API key needed)
 openai-whisper
 
-# LLM: Google Gemini API (free tier, needs GEMINI_API_KEY)
-google-generativeai
+# LLM: Groq API (free tier, needs GROQ_API_KEY) — the code actually calls
+# Groq, not Gemini; the old requirements.txt listed google-generativeai
+# even though no file imported it.
+groq
 
 # Text-to-Speech: gTTS (Google Translate TTS, free, no API key needed)
 gTTS
 
 # Audio utilities
 ffmpeg-python
+
+# Dashboard backend
+fastapi
+uvicorn
+
+# Loads GROQ_API_KEY etc. from a .env file
+python-dotenv

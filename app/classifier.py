@@ -1,25 +1,20 @@
-# classifier.py — Call Classification and Info Extraction
-# Analyzes the conversation and extracts structured data from it
+# classifier.py — Call Classification and Structured Info Extraction.
+# Analyzes the conversation so far and extracts structured data from it.
 
-import os
 import json
-from groq import Groq
 
-# ---------------------------------------------------------------------------
-# CALL CATEGORIES
-# ---------------------------------------------------------------------------
+from . import config
+from .groq_client import get_client
+
 CALL_CATEGORIES = [
-    "meeting_request",    # Caller wants to schedule or discuss a meeting
-    "delivery",           # Courier, food, or package delivery related
+    "meeting_request",  # Caller wants to schedule or discuss a meeting
+    "delivery",          # Courier, food, or package delivery related
     "emergency",          # Urgent family, medical, or critical situation
     "personal",           # Friend or family calling for general chat/message
     "business",           # Business inquiry, client, or work related
-    "unknown"             # Cannot determine the purpose
+    "unknown",             # Cannot determine the purpose
 ]
 
-# ---------------------------------------------------------------------------
-# CLASSIFICATION PROMPT
-# ---------------------------------------------------------------------------
 CLASSIFICATION_PROMPT = """
 तुम्ही एक कॉल विश्लेषण तज्ञ आहात. खालील संभाषण वाचा आणि फक्त JSON format मध्ये उत्तर द्या.
 
@@ -42,63 +37,49 @@ CLASSIFICATION_PROMPT = """
 }}
 """
 
+
 def classify_call(conversation_history: list) -> dict:
-    """
-    Takes the full conversation history.
-    Returns a structured dictionary with call classification and extracted info.
-    """
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key:
-        raise ValueError("GROQ_API_KEY environment variable not set.")
+    """Takes the full conversation history, returns structured classification dict."""
+    client = get_client()
 
-    client = Groq(api_key=api_key)
-
-    # Format conversation for the prompt
-    conversation_text = ""
-    for msg in conversation_history:
-        role = "कॉलर" if msg["role"] == "user" else "AI सहाय्यक"
-        conversation_text += f"{role}: {msg['text']}\n"
-
+    conversation_text = "".join(
+        f"{'कॉलर' if msg['role'] == 'user' else 'AI सहाय्यक'}: {msg['text']}\n"
+        for msg in conversation_history
+    )
     prompt = CLASSIFICATION_PROMPT.format(conversation=conversation_text)
 
     print("[CLASSIFIER] Analyzing call...")
-
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model=config.GROQ_MODEL,
         messages=[{"role": "user", "content": prompt}],
         max_tokens=500,
-        temperature=0.1,   # Low temperature for consistent structured output
+        temperature=0.1,  # low temperature for consistent structured output
     )
 
     raw = response.choices[0].message.content.strip()
-
-    # Clean up response — remove markdown code blocks if present
     raw = raw.replace("```json", "").replace("```", "").strip()
 
     try:
         result = json.loads(raw)
-        print(f"[CLASSIFIER] Call Type: {result.get('call_type', 'unknown')}")
-        print(f"[CLASSIFIER] Urgency: {result.get('urgency', 'low')}")
+        print(f"[CLASSIFIER] call_type={result.get('call_type', 'unknown')} "
+              f"urgency={result.get('urgency', 'low')}")
         return result
     except json.JSONDecodeError:
-        print(f"[CLASSIFIER] Warning: Could not parse JSON, returning raw text")
+        print("[CLASSIFIER] Warning: could not parse JSON, falling back to raw text")
         return {
             "call_type": "unknown",
             "caller_name": "unknown",
             "purpose": raw,
             "key_details": {},
             "urgency": "low",
-            "action_needed": "कॉल तपासा"
+            "action_needed": "कॉल तपासा",
         }
 
 
-# Quick test
 if __name__ == "__main__":
     test_conversation = [
         {"role": "user", "text": "नमस्कार, मी अमित बोलतोय. उद्या सकाळी ११ वाजता पुण्यात मीटिंग आहे."},
         {"role": "assistant", "text": "नमस्कार अमित, मीटिंग कुठे होणार आहे?"},
         {"role": "user", "text": "FC Road वर, Cafe Coffee Day मध्ये."},
     ]
-    result = classify_call(test_conversation)
-    print("\nClassification Result:")
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    print(json.dumps(classify_call(test_conversation), ensure_ascii=False, indent=2))

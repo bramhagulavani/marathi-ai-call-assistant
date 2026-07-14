@@ -108,3 +108,9 @@ Thumbs.db
 
 # Node modules (if frontend added)
 node_modules/
+
+# Generated call data (keep folder structure, ignore contents)
+data/call_logs/*.json
+data/audio/*
+!data/call_logs/.gitkeep
+!data/audio/.gitkeep
