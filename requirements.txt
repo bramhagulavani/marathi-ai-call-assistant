@@ -1,20 +1,15 @@
-# Speech-to-Text: Whisper (runs locally, free, no API key needed)
-openai-whisper
-
-# LLM: Groq API (free tier, needs GROQ_API_KEY) — the code actually calls
-# Groq, not Gemini; the old requirements.txt listed google-generativeai
-# even though no file imported it.
+# LLM: Groq API (free tier, needs GROQ_API_KEY), used in streaming mode
 groq
 
-# Text-to-Speech: gTTS (Google Translate TTS, free, no API key needed)
-gTTS
+# Text-to-Speech: edge-tts (free, no API key, streams raw audio bytes —
+# replaces gTTS, which only supported one-shot file downloads)
+edge-tts
 
-# Audio utilities
-ffmpeg-python
-
-# Dashboard backend
+# Web server: FastAPI + WebSocket support for the persistent, full-duplex
+# browser connection. [standard] pulls in the websockets library uvicorn
+# needs to actually serve WebSocket connections.
 fastapi
-uvicorn
+uvicorn[standard]
 
 # Loads GROQ_API_KEY etc. from a .env file
 python-dotenv

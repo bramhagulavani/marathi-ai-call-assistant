@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>मराठी AI कॉल सहाय्यक — Live Call</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header>
+    <div class="header-left">
+      <span class="logo-icon">📞</span>
+      <div>
+        <h1>मराठी AI कॉल सहाय्यक</h1>
+        <p class="tagline">Live Call — real-time voice, streamed end to end</p>
+      </div>
+    </div>
+    <a class="dashboard-link" href="/">Call Log Dashboard →</a>
+  </header>
+
+  <main>
+    <section class="call-panel">
+
+      <div class="status-row">
+        <span id="statusDot" class="status-dot idle"></span>
+        <span id="statusText">Not connected</span>
+        <span id="callTypeBadge" class="call-type-badge hidden"></span>
+      </div>
+
+      <div class="controls">
+        <button id="startBtn" class="btn primary">🎙️ Start Call</button>
+        <button id="endBtn" class="btn danger hidden">⏹ End Call</button>
+      </div>
+
+      <p class="hint">Requires microphone access and a browser with speech recognition (Chrome recommended). Speak in Marathi or English.</p>
+
+      <div id="transcriptLog" class="transcript-log">
+        <div class="log-empty">Your conversation will appear here as you speak.</div>
+      </div>
+
+      <div id="summaryBox" class="summary-box hidden"></div>
+
+    </section>
+  </main>
+
+  <audio id="playbackEl" style="display:none"></audio>
+
+  <script src="script.js"></script>
+</body>
+</html>

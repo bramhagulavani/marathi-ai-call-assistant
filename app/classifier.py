@@ -38,7 +38,7 @@ CLASSIFICATION_PROMPT = """
 """
 
 
-def classify_call(conversation_history: list) -> dict:
+async def classify_call(conversation_history: list) -> dict:
     """Takes the full conversation history, returns structured classification dict."""
     client = get_client()
 
@@ -49,11 +49,11 @@ def classify_call(conversation_history: list) -> dict:
     prompt = CLASSIFICATION_PROMPT.format(conversation=conversation_text)
 
     print("[CLASSIFIER] Analyzing call...")
-    response = client.chat.completions.create(
+    response = await client.chat.completions.create(
         model=config.GROQ_MODEL,
         messages=[{"role": "user", "content": prompt}],
         max_tokens=500,
-        temperature=0.1,  # low temperature for consistent structured output
+        temperature=0.1,
     )
 
     raw = response.choices[0].message.content.strip()
@@ -77,9 +77,12 @@ def classify_call(conversation_history: list) -> dict:
 
 
 if __name__ == "__main__":
+    import asyncio
+
     test_conversation = [
         {"role": "user", "text": "नमस्कार, मी अमित बोलतोय. उद्या सकाळी ११ वाजता पुण्यात मीटिंग आहे."},
         {"role": "assistant", "text": "नमस्कार अमित, मीटिंग कुठे होणार आहे?"},
         {"role": "user", "text": "FC Road वर, Cafe Coffee Day मध्ये."},
     ]
-    print(json.dumps(classify_call(test_conversation), ensure_ascii=False, indent=2))
+    result = asyncio.run(classify_call(test_conversation))
+    print(json.dumps(result, ensure_ascii=False, indent=2))

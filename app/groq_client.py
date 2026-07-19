@@ -1,14 +1,14 @@
-# groq_client.py — single cached Groq client shared by conversation.py and
-# classifier.py. Previously each module created a brand-new Groq(...) client
-# on every single API call; this reuses one client for the process lifetime.
+# groq_client.py — single cached, async Groq client shared across the app.
+# Async because the whole live-call pipeline (conversation streaming,
+# classification) now runs inside the FastAPI WebSocket event loop.
 
 from functools import lru_cache
-from groq import Groq
+from groq import AsyncGroq
 
 from . import config
 
 
 @lru_cache(maxsize=1)
-def get_client() -> Groq:
+def get_client() -> AsyncGroq:
     config.require_groq_key()
-    return Groq(api_key=config.GROQ_API_KEY)
+    return AsyncGroq(api_key=config.GROQ_API_KEY)
