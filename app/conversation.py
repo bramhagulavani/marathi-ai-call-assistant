@@ -67,9 +67,12 @@ CALL_TYPE_PROMPTS = {
 }
 
 
-def get_smart_reply(caller_text: str, conversation_history: list, call_type: str = "unknown") -> str:
+async def stream_smart_reply(caller_text: str, conversation_history: list, call_type: str = "unknown"):
     """
-    Generates a Marathi reply using the system prompt for the detected call type.
+    Async generator that yields Marathi reply text tokens as they arrive from
+    the LLM, instead of returning the full reply after generation completes.
+    Callers (see app/live/call_session.py) forward each token onward — e.g.
+    into the TTS pipeline — as soon as it's yielded.
 
     caller_text: what the caller just said
     conversation_history: prior turns, as [{"role": "user"/"assistant", "text": ...}, ...]
@@ -86,19 +89,15 @@ def get_smart_reply(caller_text: str, conversation_history: list, call_type: str
 
     print(f"[CONVERSATION] Call type: {call_type} | Caller said: {caller_text}")
 
-    response = client.chat.completions.create(
+    stream = await client.chat.completions.create(
         model=config.GROQ_MODEL,
         messages=messages,
         max_tokens=300,
         temperature=0.7,
+        stream=True,
     )
 
-    reply = response.choices[0].message.content.strip()
-    print(f"[CONVERSATION] AI reply: {reply}")
-    return reply
-
-
-if __name__ == "__main__":
-    test_input = "नमस्कार, मी अमित. उद्या मीटिंग आहे."
-    reply = get_smart_reply(test_input, [], call_type="meeting_request")
-    print(f"\nCaller: {test_input}\nAI: {reply}")
+    async for chunk in stream:
+        delta = chunk.choices[0].delta.content
+        if delta:
+            yield delta

@@ -1,22 +1,35 @@
-# server.py — Dashboard backend. Reads call summaries from data/call_logs/
-# (via config.py, so it works no matter what directory the process is
-# started from — the original app.py used a relative "static" mount and
-# a "../phase1-conversation-logic/call_logs" path that both broke unless
-# you launched it from exactly the right folder) and serves them to the
-# frontend.
+# server.py — single FastAPI app serving:
+#   - the persistent WebSocket used for the real-time voice call (/ws/call)
+#   - the live-call browser page (/call)
+#   - the call-log dashboard (/) and its REST API (/api/*)
+# One process, one port — this is the "persistent, full-duplex connection"
+# server referenced in the architecture notes.
 
 import glob
 import json
 import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from .. import config
+from ..live.call_session import handle_call
 
-app = FastAPI(title="Marathi AI Call Assistant — Dashboard")
+app = FastAPI(title="Marathi AI Call Assistant")
 
 
+# ---------------------------------------------------------------------------
+# REAL-TIME CALL — persistent two-way event channel
+# ---------------------------------------------------------------------------
+@app.websocket("/ws/call")
+async def ws_call(websocket: WebSocket):
+    await handle_call(websocket)
+
+
+# ---------------------------------------------------------------------------
+# DASHBOARD REST API — reads the JSON call summaries written by call_session
+# ---------------------------------------------------------------------------
 @app.get("/api/calls")
 def get_all_calls():
     """Returns all call summaries, newest first."""
@@ -56,17 +69,26 @@ def get_stats():
     }
 
 
-# Serve the frontend (index.html/style.css/script.js) using an absolute path
-# so this works regardless of the current working directory.
-app.mount("/", StaticFiles(directory=str(config.DASHBOARD_STATIC_DIR), html=True), name="static")
+# ---------------------------------------------------------------------------
+# STATIC FRONTENDS — absolute paths, so this works from any working directory.
+# /call must be mounted before the catch-all "/" mount.
+# ---------------------------------------------------------------------------
+@app.get("/call")
+def call_redirect():
+    return RedirectResponse(url="/call/")
+
+
+app.mount("/call", StaticFiles(directory=str(config.LIVE_STATIC_DIR), html=True), name="live")
+app.mount("/", StaticFiles(directory=str(config.DASHBOARD_STATIC_DIR), html=True), name="dashboard")
 
 
 def main():
     import uvicorn
-    print("\nMarathi AI Call Assistant — Dashboard")
-    print(f"Open your browser at: http://localhost:{config.DASHBOARD_PORT}")
+    print("\nMarathi AI Call Assistant")
+    print(f"  Live call:  http://localhost:{config.SERVER_PORT}/call")
+    print(f"  Dashboard:  http://localhost:{config.SERVER_PORT}/")
     print("Press Ctrl+C to stop\n")
-    uvicorn.run(app, host=config.DASHBOARD_HOST, port=config.DASHBOARD_PORT)
+    uvicorn.run(app, host=config.SERVER_HOST, port=config.SERVER_PORT)
 
 
 if __name__ == "__main__":
