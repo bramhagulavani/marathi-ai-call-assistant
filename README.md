@@ -82,24 +82,4 @@ python run.py
 
 Use **Chrome** — it has the most complete support for both the Web Speech API and MediaSource-based MP3 streaming used here.
 
-## 🗺 Status
 
-| Area | Status |
-|---|---|
-| Real-time streaming voice call (browser ↔ server) | ✅ Working |
-| Streaming LLM reply generation | ✅ Working |
-| Streaming TTS, no disk I/O | ✅ Working |
-| Call classification, urgency detection | ✅ Working |
-| Call summary dashboard | ✅ Working |
-| Real phone call interception (Android `CallScreeningService`) | 🔜 Not built |
-
-## 👥 Contributors
-
-| Name | Role |
-|---|---|
-| Bramha | AI Pipeline, Conversation Logic, Backend |
-| Tanmay | (add role here) |
-
-## 📄 License
-
-Built for academic and research purposes.
